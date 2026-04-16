@@ -11,7 +11,7 @@
 
 
 <!-- 카카오맵 API -->
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=7af42c16fd180decf30ca9c9eb120ede&libraries=services"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7af42c16fd180decf30ca9c9eb120ede&libraries=services&autoload=false"></script>  
 
 <style>
 :root {
@@ -871,28 +871,17 @@ dday();
 ca();
 
 // 카카오맵 로딩 완료 후 초기화
-window.kakaoMapReady = function() {
-  initKakaoMap();
-};
 
-window.onload = function() {
-  if (typeof kakao !== 'undefined' && kakao.maps) {
-    initKakaoMap();
-  } else {
-    let tries = 0;
-    const timer = setInterval(() => {
-      tries++;
-      if (typeof kakao !== 'undefined' && kakao.maps) {
-        clearInterval(timer);
-        initKakaoMap();
-      } else if (tries > 20) {
-        clearInterval(timer);
-        document.getElementById('map-loading').innerHTML =
-          '<span style="padding:16px;text-align:center;color:var(--tx2);">지도를 불러올 수 없습니다.<br>카카오맵 API 키와 도메인 설정을 확인해주세요.</span>';
-      }
-    }, 300);
+window.addEventListener('load', function() {
+  if (typeof kakao === 'undefined' || !kakao.maps) {
+    document.getElementById('map-loading').innerHTML =
+      '<span style="padding:16px;text-align:center;color:var(--tx2);">카카오맵 SDK 로드 실패.<br>앱키/도메인 등록 상태를 확인해주세요.</span>';
+    return;
   }
-};
+  kakao.maps.load(function() {
+    initKakaoMap();
+  });
+});
 </script>
 </body>
 </html>
