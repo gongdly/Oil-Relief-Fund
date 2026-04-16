@@ -11,7 +11,7 @@
 
 
 <!-- 카카오맵 API -->
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7af42c16fd180decf30ca9c9eb120ede&libraries=services&autoload=false"></script>  
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=7af42c16fd180decf30ca9c9eb120ede&libraries=services"></script>
 
 <style>
 :root {
@@ -224,7 +224,7 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
       <div class="map-box">
         <div id="map-loading" class="map-loading">
           <div class="spinner"></div>
-          <span>지도를 불러오는 중...</span>
+          <span>전국 시군구 지도 불러오는 중...</span>
         </div>
         <div id="vmap"></div>
       </div>
@@ -532,22 +532,19 @@ let activeFilter = null;
 let allPolygons = []; // {polygon, grade, name}
 
 function initKakaoMap() {
-  document.getElementById('map-loading').style.display = 'none';
-
   const container = document.getElementById('vmap');
   const options = {
-    center: new kakao.maps.LatLng(36.0, 127.7),
+    center: new kakao.maps.LatLng(36.2, 127.8),
     level: 13
   };
   map = new kakao.maps.Map(container, options);
   geocoder = new kakao.maps.services.Geocoder();
 
-  // 지도 클릭 시 주소 → 지역 찾기
+  // 지도 백그라운드(폴리곤 없는 바다 등) 클릭 시 주소 → 지역 찾기
   kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
     const latlng = mouseEvent.latLng;
     geocoder.coord2RegionCode(latlng.getLng(), latlng.getLat(), function(result, status) {
       if (status === kakao.maps.services.Status.OK) {
-        // 시군구 단위 찾기
         const region = result.find(r => r.region_type === 'B');
         if (region) {
           const name = region.region_2depth_name || region.region_1depth_name;
@@ -563,7 +560,7 @@ function initKakaoMap() {
     });
   });
 
-  // 전국 시도 영역 폴리곤 그리기
+  // 전국 시군구 GeoJSON 로드 후 폴리곤 그리기
   drawAllRegions();
 }
 
@@ -587,93 +584,153 @@ function findRegion(name2, fullAddr) {
   return found;
 }
 
-// 전국 시도별 대표 폴리곤 그리기 (카카오맵 Polygon)
+// =====================
+// 시군구별 GeoJSON 폴리곤 렌더링
+// =====================
+
+// 시도 code 앞 2자리 → 시도명 매핑 (KOSTAT 행정구역 코드 기준)
+const SIDO_CODE = {
+  "11":"서울","21":"부산","22":"대구","23":"인천","24":"광주","25":"대전","26":"울산","29":"세종",
+  "31":"경기","32":"강원","33":"충북","34":"충남","35":"전북","36":"전남","37":"경북","38":"경남","39":"제주"
+};
+
+// GeoJSON의 name(+시도)을 RD 레코드로 해석
+function resolveGradeForFeature(name, sidoName) {
+  // 특수 케이스: 시도명이 필요한 경우 먼저 처리
+  if (sidoName === "강원" && name === "고성군") {
+    return RD.find(r => r.n === "고성군(강원)");
+  }
+  if (sidoName === "경남" && name === "고성군") {
+    return RD.find(r => r.n === "고성군(경남)");
+  }
+  // 광역시의 "동구/서구/남구" → "부산 동구", "대구 남구" 형태로 RD 조회
+  if (["부산","대구","광주"].includes(sidoName) && ["동구","서구","남구","북구","중구"].includes(name)) {
+    const key = `${sidoName} ${name}`;
+    const direct = RD.find(r => r.n === key);
+    if (direct) return direct;
+  }
+  // 대구 군위(2023년 이후 편입). GeoJSON이 경북 군위군으로 되어있을 수도 있음
+  if (name === "군위군") {
+    return RD.find(r => r.n === "대구 군위");
+  }
+  // 정확 매칭
+  let found = RD.find(r => r.n === name);
+  if (found) return found;
+  // "시"/"군" 접미어 빼고도 매칭 (예: "강화군" → "강화")
+  const bare = name.replace(/(시|군|구)$/, "");
+  found = RD.find(r => r.n === bare || r.kw.includes(bare) || r.kw.includes(name));
+  if (found) return found;
+  // 광역시 내부 일반구 → 해당 광역시 grade
+  if (["부산","대구","광주","대전","울산","인천","서울"].includes(sidoName)) {
+    return RD.find(r => r.n === sidoName);
+  }
+  // 도 내부 시/군 중 RD에 없음 → 해당 도의 "general"
+  return RD.find(r => r.n === sidoName) || {n: name, g: "general"};
+}
+
+// 카카오맵 Polygon path로 변환 (GeoJSON 좌표계: [lng, lat])
+function geoJSONToKakaoPaths(geometry) {
+  const paths = [];
+  const coords = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+  coords.forEach(poly => {
+    // 외곽 링만 사용 (내부 구멍은 무시 - 한국 시군구엔 거의 없음)
+    const ring = poly[0];
+    const path = ring.map(([lng, lat]) => new kakao.maps.LatLng(lat, lng));
+    paths.push(path);
+  });
+  return paths;
+}
+
 function drawAllRegions() {
-  // 시도별 중심 좌표로 마커 + 클릭 영역 생성
-  const sidoData = [
-    {n:"서울",g:"capital",lat:37.566,lng:126.978,r:0.18},
-    {n:"인천",g:"capital",lat:37.456,lng:126.705,r:0.22},
-    {n:"경기",g:"capital",lat:37.275,lng:127.009,r:0.7},
-    {n:"강원",g:"general",lat:37.555,lng:128.209,r:0.85},
-    {n:"충북",g:"general",lat:36.791,lng:127.655,r:0.55},
-    {n:"충남",g:"general",lat:36.519,lng:126.8,r:0.6},
-    {n:"세종",g:"general",lat:36.48,lng:127.289,r:0.15},
-    {n:"대전",g:"general",lat:36.351,lng:127.385,r:0.15},
-    {n:"전북",g:"general",lat:35.716,lng:127.144,r:0.6},
-    {n:"전남",g:"general",lat:34.816,lng:126.463,r:0.8},
-    {n:"광주",g:"general",lat:35.16,lng:126.851,r:0.15},
-    {n:"경북",g:"general",lat:36.349,lng:128.888,r:0.85},
-    {n:"대구",g:"general",lat:35.871,lng:128.602,r:0.2},
-    {n:"경남",g:"general",lat:35.238,lng:128.692,r:0.65},
-    {n:"부산",g:"general",lat:35.18,lng:129.075,r:0.2},
-    {n:"울산",g:"general",lat:35.538,lng:129.311,r:0.2},
-    {n:"제주",g:"general",lat:33.489,lng:126.498,r:0.35},
-  ];
+  const GEOJSON_URL = "https://raw.githubusercontent.com/southkorea/southkorea-maps/master/kostat/2018/json/skorea-municipalities-2018-geo.json";
+  const loading = document.getElementById('map-loading');
 
-  sidoData.forEach(sido => {
-    // 원형 클릭 영역 (실제 지도 위 투명 폴리곤 대신 Circle 활용)
-    const circle = new kakao.maps.Circle({
-      center: new kakao.maps.LatLng(sido.lat, sido.lng),
-      radius: sido.r * 70000,
-      strokeWeight: 1.5,
-      strokeColor: '#ffffff',
-      strokeOpacity: 0.9,
-      fillColor: GC[sido.g],
-      fillOpacity: 0.35,
-    });
-    circle.setMap(map);
-    circle._name = sido.n;
-    circle._grade = sido.g;
-    allPolygons.push({circle, name: sido.n, grade: sido.g});
+  fetch(GEOJSON_URL)
+    .then(res => {
+      if (!res.ok) throw new Error('GeoJSON 로드 실패: ' + res.status);
+      return res.json();
+    })
+    .then(geo => {
+      geo.features.forEach(feature => {
+        const props = feature.properties || {};
+        const name = props.name;
+        const code = (props.code || "").toString();
+        const sidoName = SIDO_CODE[code.substring(0, 2)] || "";
+        if (!name) return;
 
-    // 클릭 이벤트
-    kakao.maps.event.addListener(circle, 'click', function() {
-      pickRegion(sido.n, sido.g);
-      document.getElementById('addr-in').value = sido.n;
-      highlightRegion(sido.n);
-    });
+        const match = resolveGradeForFeature(name, sidoName);
+        const grade = match ? match.g : "general";
+        // 표시용 이름: RD에 매칭된 이름 우선 (검색창/결과 패널과 통일)
+        const displayName = match && match.n ? match.n : name;
 
-    // 호버
-    kakao.maps.event.addListener(circle, 'mouseover', function() {
-      circle.setOptions({fillOpacity: 0.6});
-    });
-    kakao.maps.event.addListener(circle, 'mouseout', function() {
-      if (!circle._selected) circle.setOptions({fillOpacity: activeFilter && activeFilter !== sido.g ? 0.08 : 0.35});
-    });
+        const paths = geoJSONToKakaoPaths(feature.geometry);
+        paths.forEach(path => {
+          const polygon = new kakao.maps.Polygon({
+            path: path,
+            strokeWeight: 1,
+            strokeColor: '#ffffff',
+            strokeOpacity: 0.7,
+            fillColor: GC[grade],
+            fillOpacity: 0.45,
+          });
+          polygon.setMap(map);
+          polygon._name = displayName;
+          polygon._grade = grade;
+          allPolygons.push({polygon, name: displayName, grade});
 
-    // 라벨
-    if (sido.r >= 0.2) {
-      const label = new kakao.maps.CustomOverlay({
-        position: new kakao.maps.LatLng(sido.lat, sido.lng),
-        content: `<div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);pointer-events:none;white-space:nowrap;">${sido.n}</div>`,
-        zIndex: 3
+          kakao.maps.event.addListener(polygon, 'click', function() {
+            pickRegion(displayName, grade);
+            document.getElementById('addr-in').value = displayName;
+            highlightRegion(displayName);
+          });
+          kakao.maps.event.addListener(polygon, 'mouseover', function() {
+            if (!polygon._selected) polygon.setOptions({fillOpacity: 0.7, strokeWeight: 1.5});
+          });
+          kakao.maps.event.addListener(polygon, 'mouseout', function() {
+            if (!polygon._selected) {
+              polygon.setOptions({
+                fillOpacity: activeFilter && activeFilter !== grade ? 0.1 : 0.45,
+                strokeWeight: 1
+              });
+            }
+          });
+        });
       });
-      label.setMap(map);
-    }
-  });
+      loading.style.display = 'none';
+    })
+    .catch(err => {
+      console.error(err);
+      loading.innerHTML = '<span style="padding:16px;text-align:center;color:var(--tx2);font-size:12px;">지도 데이터를 불러오지 못했습니다.<br>네트워크 연결을 확인하세요.</span>';
+    });
 }
 
-// 지역 강조
+// 지역 강조 (선택된 시군구 강조)
 function highlightRegion(name) {
-  allPolygons.forEach(({circle, name: n, grade}) => {
+  allPolygons.forEach(({polygon, name: n, grade}) => {
     if (n === name) {
-      circle._selected = true;
-      circle.setOptions({fillOpacity: 0.75, strokeColor: '#1a1916', strokeWeight: 2.5});
+      polygon._selected = true;
+      polygon.setOptions({fillOpacity: 0.85, strokeColor: '#1a1916', strokeWeight: 2.5, zIndex: 10});
     } else {
-      circle._selected = false;
-      circle.setOptions({fillOpacity: activeFilter && activeFilter !== grade ? 0.08 : 0.35, strokeColor: '#ffffff', strokeWeight: 1.5});
+      polygon._selected = false;
+      polygon.setOptions({
+        fillOpacity: activeFilter && activeFilter !== grade ? 0.1 : 0.45,
+        strokeColor: '#ffffff',
+        strokeWeight: 1,
+        zIndex: 1
+      });
     }
   });
 }
 
-// 등급 필터
+// 등급 필터 (범례 클릭 시 해당 등급만 부각)
 function filterGrade(grade) {
   activeFilter = activeFilter === grade ? null : grade;
-  allPolygons.forEach(({circle, grade: g}) => {
+  allPolygons.forEach(({polygon, grade: g}) => {
+    if (polygon._selected) return; // 선택된 지역은 유지
     if (!activeFilter) {
-      circle.setOptions({fillOpacity: 0.35});
+      polygon.setOptions({fillOpacity: 0.45});
     } else {
-      circle.setOptions({fillOpacity: g === activeFilter ? 0.6 : 0.08});
+      polygon.setOptions({fillOpacity: g === activeFilter ? 0.75 : 0.1});
     }
   });
 }
@@ -871,17 +928,28 @@ dday();
 ca();
 
 // 카카오맵 로딩 완료 후 초기화
+window.kakaoMapReady = function() {
+  initKakaoMap();
+};
 
-window.addEventListener('load', function() {
-  if (typeof kakao === 'undefined' || !kakao.maps) {
-    document.getElementById('map-loading').innerHTML =
-      '<span style="padding:16px;text-align:center;color:var(--tx2);">카카오맵 SDK 로드 실패.<br>앱키/도메인 등록 상태를 확인해주세요.</span>';
-    return;
-  }
-  kakao.maps.load(function() {
+window.onload = function() {
+  if (typeof kakao !== 'undefined' && kakao.maps) {
     initKakaoMap();
-  });
-});
+  } else {
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries++;
+      if (typeof kakao !== 'undefined' && kakao.maps) {
+        clearInterval(timer);
+        initKakaoMap();
+      } else if (tries > 20) {
+        clearInterval(timer);
+        document.getElementById('map-loading').innerHTML =
+          '<span style="padding:16px;text-align:center;color:var(--tx2);">지도를 불러올 수 없습니다.<br>카카오맵 API 키와 도메인 설정을 확인해주세요.</span>';
+      }
+    }, 300);
+  }
+};
 </script>
 </body>
 </html>
