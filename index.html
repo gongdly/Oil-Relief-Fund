@@ -398,7 +398,7 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 <footer class="ftr">
   <p>본 사이트는 정부 공식 사이트가 아닌 민간 정보 제공 서비스입니다.</p>
   <p style="margin-top:3px;">공식 정보: <a href="https://www.mois.go.kr" target="_blank">행정안전부 mois.go.kr</a> · <a href="https://www.gov.kr" target="_blank">정부24 gov.kr</a></p>
-  <p style="margin-top:7px;">지도: 국토지리정보원 공간정보 오픈플랫폼(브이월드) · © 2026 고유가피해지원금 계산기</p>
+  <p style="margin-top:7px;">© 2026 고유가피해지원금 계산기</p>
 </footer>
 
 <script>
@@ -566,22 +566,41 @@ function initKakaoMap() {
 
 // 지역 찾기 (클릭 시)
 function findRegion(name2, fullAddr) {
+  // 주소에서 시도 추출 (예: "경기도 광주시 ..." → "경기")
+  const sidoRaw = fullAddr.split(' ')[0];
+  const sidoShort = sidoRaw.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/, "");
+
+  // 경기 광주시처럼 시도명+시군구명이 다른 시도와 겹치는 경우를 먼저 처리
+  // → 시도가 도(경기/강원/충북 등)이고 시군구명이 광역시명과 같으면 해당 도의 grade로
+  if (["경기","강원","충북","충남","전북","전남","경북","경남"].includes(sidoShort)) {
+    const bare = name2.replace(/(시|군|구)$/, "");
+    if (["서울","부산","대구","인천","광주","대전","울산"].includes(bare)) {
+      const sidoRec = RD.find(r => r.n === sidoShort);
+      if (sidoRec) return sidoRec;
+    }
+  }
+
   // 정확 매칭 우선
   let found = RD.find(r => r.n === name2 || r.kw.includes(name2));
-  if (!found) {
-    // 부분 매칭
-    found = RD.find(r =>
+  if (found) return found;
+
+  // 부분 매칭 (단, 시도명과 같은 RD 레코드는 제외해서 오매칭 방지)
+  found = RD.find(r =>
+    !["서울","부산","대구","인천","광주","대전","울산"].includes(r.n) && (
       fullAddr.includes(r.n) ||
       r.kw.some(k => fullAddr.includes(k))
-    );
-  }
+    )
+  );
+  if (found) return found;
+
   // 시도명으로 폴백
-  if (!found) {
-    const sido = fullAddr.split(' ')[0];
-    if (['서울','인천','경기'].some(s => sido.includes(s))) return {n:sido,g:'capital'};
-    return {n:name2, g:'general'};
+  if (['서울','인천','경기'].some(s => sidoShort.includes(s))) return {n: sidoShort, g: 'capital'};
+  // 광역시 폴백
+  if (['부산','대구','광주','대전','울산'].includes(sidoShort)) {
+    const sidoRec = RD.find(r => r.n === sidoShort);
+    if (sidoRec) return sidoRec;
   }
-  return found;
+  return {n: name2, g: 'general'};
 }
 
 // =====================
@@ -613,18 +632,24 @@ function resolveGradeForFeature(name, sidoName) {
   if (name === "군위군") {
     return RD.find(r => r.n === "대구 군위");
   }
+  // 시도명 집합 (접미어 제거 후 시도명과 동일해지는 경우를 걸러내기 위함)
+  const SIDO_NAMES = ["서울","부산","대구","인천","광주","대전","울산","세종","경기","강원","충북","충남","전북","전남","경북","경남","제주"];
+
   // 정확 매칭
   let found = RD.find(r => r.n === name);
   if (found) return found;
-  // "시"/"군" 접미어 빼고도 매칭 (예: "강화군" → "강화")
+  // "시"/"군"/"구" 접미어 빼고 매칭 (예: "강화군" → "강화")
+  // 단, 접미어를 뗀 이름이 시도명과 같으면(예: "광주시"→"광주") 시도 레코드와 혼동되므로 건너뜀
   const bare = name.replace(/(시|군|구)$/, "");
-  found = RD.find(r => r.n === bare || r.kw.includes(bare) || r.kw.includes(name));
-  if (found) return found;
+  if (!SIDO_NAMES.includes(bare)) {
+    found = RD.find(r => r.n === bare || r.kw.includes(bare) || r.kw.includes(name));
+    if (found) return found;
+  }
   // 광역시 내부 일반구 → 해당 광역시 grade
   if (["부산","대구","광주","대전","울산","인천","서울"].includes(sidoName)) {
     return RD.find(r => r.n === sidoName);
   }
-  // 도 내부 시/군 중 RD에 없음 → 해당 도의 "general"
+  // 도 내부 시/군 중 RD에 없음 → 해당 도의 grade (경기도 광주시 → 경기(capital) 등)
   return RD.find(r => r.n === sidoName) || {n: name, g: "general"};
 }
 
@@ -819,7 +844,7 @@ function us(reg, tier, mem, per) {
   let im = '';
   if (tier === 'general' && inc && !isNaN(inc))
     im = inc <= lim ? '\n✓ 소득 하위 70% 충족 가능성 높음' : '\n✕ 소득 기준 초과 가능성 (건강보험료 확인 필요)';
-  const txt = `💰 2026 고유가 피해지원금 계산해봤어요!\n\n📍 ${rl} (${GL[reg]})\n👤 ${TL[tier]} · ${mem}인 가구\n→ 예상 수령액: ${per}만원${mem > 1 ? ' (1인 기준)' : ''}${mem > 1 ? '\n→ 가족 합산: ' + (per * mem) + '만원' : ''}${im}\n\n📅 1차 신청: 4월 27일~\n⏰ 사용기한: 8월 31일 (미사용 소멸!)\n\n지원금 계산기로 내 금액 확인 👉 고유가피해지원금.kr`;
+  const txt = `💰 2026 고유가 피해지원금 계산해봤어요!\n\n📍 ${rl} (${GL[reg]})\n👤 ${TL[tier]} · ${mem}인 가구\n→ 예상 수령액: ${per}만원${mem > 1 ? ' (1인 기준)' : ''}${mem > 1 ? '\n→ 가족 합산: ' + (per * mem) + '만원' : ''}${im}\n\n📅 1차 신청: 4월 27일~\n⏰ 사용기한: 8월 31일 (미사용 소멸!)\n\n👉 지원금 계산기로 내 금액 확인`;
   document.getElementById('stxt').textContent = txt;
 }
 
