@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="2026 고유가 피해지원금 — 내 지역과 소득을 입력하면 예상 수령액을 즉시 계산. 전국 지역별 지도, 5부제 신청 요일 확인.">
+<meta property="og:title" content="2026 고유가 피해지원금 계산기 — 내 지역·소득으로 즉시 확인">
+<meta property="og:description" content="수도권 10만원 ~ 최대 60만원. 4월 27일부터 신청.">
+<title>2026 고유가 피해지원금 계산기 | 내 지역·소득으로 즉시 확인</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
+
+<!-- V-World 2D 지도 API -->
+<script type="text/javascript" src="https://map.vworld.kr/js/mapInit.js.do?version=2.0&apiKey=BF1E3A19-DD48-340B-942F-AE29B82ACA48"></script>
+
+<style>
+:root {
+  --bg:#f7f6f2; --sur:#fff; --sur2:#f0ede6; --tx:#1a1916; --tx2:#6b6860; --tx3:#9b9890;
+  --ac:#c94a1a; --ac2:#e8673a; --gr:#1a7a52; --bl:#1a5fa8;
+  --brd:rgba(26,25,22,.1); --brd2:rgba(26,25,22,.06);
+  --r:12px; --rl:20px;
+  --fd:'Gmarket Sans','Noto Sans KR',sans-serif;
+  --fb:'Noto Sans KR',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--tx);font-family:var(--fb);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* DDAY */
+.dday-bar{background:var(--ac);color:#fff;text-align:center;padding:9px;font-size:13px;font-weight:700;letter-spacing:.2px;}
+.dday-bar span{font-family:var(--fd);font-size:17px;margin:0 4px;}
+
+/* HEADER */
+.hdr{background:var(--tx);color:#fff;padding:0 20px;position:sticky;top:0;z-index:200;border-bottom:2px solid var(--ac);}
+.hdr-in{max-width:980px;margin:0 auto;height:52px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:var(--fd);font-weight:700;font-size:16px;color:#fff;}
+.logo span{color:var(--ac2);}
+.pill{background:var(--ac);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+
+/* HERO */
+.hero{background:var(--tx);color:#fff;padding:50px 20px 42px;text-align:center;overflow:hidden;position:relative;}
+.hero::before{content:'';position:absolute;top:-50px;right:-50px;width:260px;height:260px;background:radial-gradient(circle,rgba(201,74,26,.22) 0%,transparent 70%);pointer-events:none;}
+.hi{max-width:660px;margin:0 auto;position:relative;z-index:1;}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 13px;font-size:12px;color:rgba(255,255,255,.65);margin-bottom:16px;}
+.eyebrow b{color:var(--ac2);}
+.hero h1{font-family:var(--fd);font-size:clamp(23px,5vw,39px);font-weight:700;line-height:1.2;letter-spacing:-1px;margin-bottom:11px;}
+.hero h1 em{color:var(--ac2);font-style:normal;}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.6);margin-bottom:26px;line-height:1.7;}
+.stats{display:flex;justify-content:center;flex-wrap:wrap;}
+.stat{padding:12px 22px;border-right:1px solid rgba(255,255,255,.1);}
+.stat:last-child{border-right:none;}
+.sv{font-family:var(--fd);font-size:21px;font-weight:700;color:#fff;display:block;}
+.sv.r{color:var(--ac2);}
+.sl{font-size:11px;color:rgba(255,255,255,.42);margin-top:1px;display:block;}
+
+/* PAGE */
+.page{max-width:980px;margin:0 auto;padding:32px 16px 64px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:660px){.g2{grid-template-columns:1fr;}}
+.card{background:var(--sur);border-radius:var(--rl);border:1px solid var(--brd2);padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);}
+.ct{font-family:var(--fd);font-size:12px;font-weight:700;color:var(--tx2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;padding-bottom:9px;border-bottom:1px solid var(--brd2);}
+.sh{display:flex;align-items:baseline;gap:9px;margin-bottom:16px;}
+.sn{font-family:var(--fd);font-size:28px;font-weight:700;color:var(--brd);line-height:1;}
+.st{font-family:var(--fd);font-size:17px;font-weight:700;}
+.sd{font-size:12px;color:var(--tx2);margin-top:1px;}
+.fi{opacity:0;transform:translateY(13px);transition:opacity .5s,transform .5s;}
+.fi.vis{opacity:1;transform:none;}
+
+/* MAP SECTION */
+.mw{display:flex;gap:16px;flex-wrap:wrap;}
+.mc{flex:1;min-width:240px;}
+.ms{width:225px;flex-shrink:0;display:flex;flex-direction:column;gap:9px;}
+@media(max-width:640px){.ms{width:100%;}}
+
+/* 검색 */
+.sw{position:relative;margin-bottom:9px;}
+.si{width:100%;padding:9px 13px 9px 36px;border:1.5px solid var(--brd);border-radius:9px;font-size:14px;font-family:var(--fb);background:var(--sur);color:var(--tx);transition:border-color .2s;}
+.si:focus{outline:none;border-color:var(--ac);}
+.sic{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--tx3);font-size:14px;pointer-events:none;}
+.acd{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--sur);border:1px solid var(--brd);border-radius:9px;box-shadow:0 8px 28px rgba(0,0,0,.1);z-index:300;max-height:180px;overflow-y:auto;}
+.aci{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--brd2);display:flex;justify-content:space-between;align-items:center;}
+.aci:last-child{border-bottom:none;}
+.aci:hover{background:var(--sur2);}
+.acg{font-size:11px;color:var(--tx3);}
+.aca{font-size:12px;font-weight:700;color:var(--ac);}
+
+/* 범례 */
+.leg{display:flex;flex-direction:column;gap:3px;margin-bottom:9px;}
+.lr{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:7px;cursor:pointer;font-size:12px;transition:background .15s;}
+.lr:hover{background:var(--sur2);}
+.ld{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.ll{font-weight:500;}
+.la{margin-left:auto;color:var(--tx2);font-size:11px;}
+
+/* V-World 지도 컨테이너 */
+.map-box{border:1px solid var(--brd2);border-radius:var(--rl);overflow:hidden;height:420px;position:relative;}
+#vmap{width:100%;height:100%;}
+.map-loading{position:absolute;inset:0;background:var(--sur2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--tx2);z-index:10;}
+.map-loading .spinner{width:28px;height:28px;border:3px solid var(--brd);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* INFO 패널 */
+.ip{background:var(--sur2);border-radius:var(--r);padding:13px;border:1px solid var(--brd2);}
+.iph{font-size:11px;color:var(--tx3);margin-bottom:3px;}
+.ipr{font-family:var(--fd);font-size:19px;font-weight:700;margin-bottom:2px;}
+.igt{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-bottom:7px;}
+.t-sp{background:#fde8df;color:#993c1d;}
+.t-pr{background:#ddf0e8;color:#0f6e50;}
+.t-gn{background:#dde8f5;color:#1a5fa8;}
+.t-cp{background:#ebebeb;color:#5f5e5a;}
+.idv{border-top:1px solid var(--brd);padding-top:9px;}
+.ial{font-size:11px;color:var(--tx3);margin-bottom:1px;}
+.ia{font-family:var(--fd);font-size:25px;font-weight:700;color:var(--ac);}
+.inn{font-size:11px;color:var(--tx2);margin-top:3px;line-height:1.5;}
+.ab{background:#fdf3e3;border:1px solid #f5d9a0;border-radius:var(--r);padding:10px 12px;font-size:12px;color:#7a4f0a;line-height:1.6;}
+.ab strong{display:block;margin-bottom:3px;font-size:13px;}
+.nb{background:#e8f0fb;border:1px solid #b8cef0;border-radius:var(--r);padding:10px 12px;font-size:12px;color:#1a4a8a;line-height:1.6;margin-top:7px;}
+
+/* FORM */
+.fg{margin-bottom:12px;}
+.fl{font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:5px;display:block;}
+.fc{width:100%;padding:9px 12px;border:1.5px solid var(--brd);border-radius:9px;font-size:14px;font-family:var(--fb);background:var(--sur);color:var(--tx);transition:border-color .2s;appearance:none;}
+.fc:focus{outline:none;border-color:var(--ac);}
+select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239b9890' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:28px;}
+.ic{padding:6px 10px;border-radius:7px;font-size:12px;margin-top:4px;line-height:1.5;}
+.ok{background:#ddf0e8;color:#0f6e50;}
+.no{background:#fde8df;color:#993c1d;}
+.na{background:#f0ede6;color:#6b6860;}
+
+/* RESULT */
+.rb{background:var(--tx);color:#fff;border-radius:var(--r);padding:17px;margin-top:5px;}
+.rl2{font-size:11px;color:rgba(255,255,255,.42);margin-bottom:3px;}
+.ra{font-family:var(--fd);font-size:33px;font-weight:700;color:var(--ac2);line-height:1;}
+.rbd{font-size:11px;color:rgba(255,255,255,.42);margin-top:6px;line-height:1.7;border-top:1px solid rgba(255,255,255,.1);padding-top:6px;}
+
+/* YOIL */
+.yg{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px;}
+.yi{background:var(--sur2);border:1.5px solid var(--brd2);border-radius:9px;padding:8px 3px;text-align:center;transition:all .2s;}
+.yd{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--tx);}
+.yn{font-size:10px;color:var(--tx3);margin-top:1px;}
+.ya{border-color:var(--ac);background:#fef3ee;}
+.ya .yd{color:var(--ac);}
+.ynote{font-size:11px;color:var(--tx3);margin-top:7px;line-height:1.5;}
+
+/* SHARE */
+.stxt{background:var(--sur2);border:1px solid var(--brd);border-radius:9px;padding:12px;font-size:13px;color:var(--tx);line-height:1.7;min-height:86px;white-space:pre-line;margin-bottom:10px;}
+.br{display:flex;gap:7px;flex-wrap:wrap;}
+.btn{padding:8px 15px;border-radius:8px;font-size:13px;font-family:var(--fb);font-weight:700;cursor:pointer;border:1.5px solid var(--brd);background:var(--sur);color:var(--tx);transition:all .15s;}
+.btn:hover{background:var(--sur2);}
+.bc{background:var(--tx);color:#fff;border-color:var(--tx);}
+.ck{font-size:11px;color:var(--gr);margin-top:4px;display:none;font-weight:700;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{padding:8px 10px;text-align:left;font-weight:700;border-bottom:2px solid var(--brd);color:var(--tx2);background:var(--sur2);}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--brd2);}
+.tbl td.hi{font-weight:700;color:var(--ac);}
+.tnote{font-size:11px;color:var(--tx3);margin-top:6px;}
+
+/* AD */
+.ad{background:var(--sur2);border:1px dashed var(--brd);border-radius:var(--r);min-height:88px;display:flex;align-items:center;justify-content:center;color:var(--tx3);font-size:12px;margin:16px 0;text-align:center;}
+
+/* FOOTER */
+.ftr{background:var(--tx);color:rgba(255,255,255,.38);text-align:center;padding:26px 16px;font-size:12px;line-height:1.8;}
+.ftr a{color:rgba(255,255,255,.48);text-decoration:none;}
+
+@media(max-width:560px){
+  .hero{padding:32px 13px 28px;}
+  .page{padding:20px 12px 48px;}
+  .card{padding:15px;}
+  .stat{padding:10px 12px;}
+  .map-box{height:320px;}
+}
+</style>
+</head>
+<body>
+
+<div class="dday-bar">사용 기한 <span id="dd-t">—</span>일 남았습니다 — 8월 31일까지 미사용 전액 소멸</div>
+
+<header class="hdr">
+  <div class="hdr-in">
+    <div class="logo">고유가<span>피해지원금</span> 계산기</div>
+    <div class="pill">2026 최신</div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hi">
+    <div class="eyebrow"><b>2026</b> 고유가 피해지원금 지급 안내</div>
+    <h1>내가 얼마 받는지<br><em>5초면 계산됩니다</em></h1>
+    <p class="hero-sub">주소 검색 한 번으로 지역 등급 자동 판별 · 소득 입력하면 하위 70% 여부까지 확인<br>수도권 10만원 ~ 인구감소 특별지역 최대 60만원</p>
+    <div class="stats">
+      <div class="stat"><span class="sv r">60만원</span><span class="sl">1인 최대 지원금</span></div>
+      <div class="stat"><span class="sv">3,577만명</span><span class="sl">지원 대상 인원</span></div>
+      <div class="stat"><span class="sv">4/27</span><span class="sl">1차 신청 시작</span></div>
+      <div class="stat"><span class="sv r" id="dd-h">—</span><span class="sl">사용기한까지 D-</span></div>
+    </div>
+  </div>
+</section>
+
+<div style="max-width:980px;margin:0 auto;padding:0 16px;">
+  <div class="ad"><!-- Google AdSense 코드 삽입 --><span>광고 영역</span></div>
+</div>
+
+<main class="page">
+
+<!-- 01. 지도 -->
+<section class="fi" style="margin-bottom:36px;">
+  <div class="sh"><div class="sn">01</div><div><div class="st">내 지역 확인</div><div class="sd">지도를 클릭하거나 주소를 검색하세요</div></div></div>
+  <div class="mw">
+    <div class="mc">
+      <div class="sw">
+        <span class="sic">🔍</span>
+        <input type="text" class="si" id="addr-in" placeholder="시/군/구 검색 (예: 의성군, 강화군, 서울)" oninput="srch(this.value)" autocomplete="off">
+        <div class="acd" id="acd" style="display:none;"></div>
+      </div>
+      <div class="leg">
+        <div class="lr" onclick="filterGrade('special')"><div class="ld" style="background:#c94a1a;"></div><span class="ll">인구감소 특별지역 (40곳)</span><span class="la">일반 25만원</span></div>
+        <div class="lr" onclick="filterGrade('preferred')"><div class="ld" style="background:#1a7a52;"></div><span class="ll">인구감소 우대지역 (49곳)</span><span class="la">일반 20만원</span></div>
+        <div class="lr" onclick="filterGrade('general')"><div class="ld" style="background:#1a5fa8;"></div><span class="ll">일반 비수도권</span><span class="la">일반 15만원</span></div>
+        <div class="lr" onclick="filterGrade('capital')"><div class="ld" style="background:#9b9890;"></div><span class="ll">수도권</span><span class="la">일반 10만원</span></div>
+      </div>
+      <!-- V-World 지도 -->
+      <div class="map-box">
+        <div id="map-loading" class="map-loading">
+          <div class="spinner"></div>
+          <span>지도를 불러오는 중...</span>
+        </div>
+        <div id="vmap"></div>
+      </div>
+    </div>
+    <div class="ms">
+      <div class="ip">
+        <div class="iph" id="iph">지역을 검색하거나 지도를 클릭하세요</div>
+        <div class="ipr" id="ipr">—</div>
+        <div id="ipt"></div>
+        <div class="idv">
+          <div class="ial">일반(소득 하위 70%) 기준</div>
+          <div class="ia" id="ipa">—</div>
+          <div class="inn" id="ipn"></div>
+        </div>
+      </div>
+      <div class="ab">
+        <strong>취약계층 추가 지원</strong>
+        기초수급자 +40만원<br>차상위·한부모 +30만원<br>비수도권 거주 시 +5만원
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="ad"><!-- Google AdSense 코드 삽입 --><span>광고 영역</span></div>
+
+<!-- 02. 계산기 -->
+<section class="fi" style="margin-bottom:36px;">
+  <div class="sh"><div class="sn">02</div><div><div class="st">수령액 + 소득 기준 계산기</div><div class="sd">소득 하위 70% 해당 여부까지 즉시 확인</div></div></div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">📋 내 조건 입력</div>
+      <div class="fg">
+        <label class="fl">거주 지역 등급</label>
+        <select class="fc" id="cr" onchange="ca()">
+          <option value="capital">수도권</option>
+          <option value="general">일반 비수도권</option>
+          <option value="preferred">인구감소 우대지역</option>
+          <option value="special">인구감소 특별지역</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">계층 구분</label>
+        <select class="fc" id="ct2" onchange="ca()">
+          <option value="general">일반 (소득 하위 70%)</option>
+          <option value="hanobu">차상위·한부모가족</option>
+          <option value="basic">기초생활수급자</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">가구원 수</label>
+        <input type="number" class="fc" id="cm" min="1" max="10" value="1" oninput="ca()" style="max-width:96px;">
+      </div>
+      <div class="fg" id="ig">
+        <label class="fl">월 소득 합산 (세전, 만원)</label>
+        <input type="number" class="fc" id="ci" placeholder="예: 350" oninput="ca()">
+        <div class="ic na" id="ir">소득을 입력하면 하위 70% 여부를 확인합니다</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">💰 예상 수령액</div>
+      <div class="rb">
+        <div class="rl2">1인 예상 수령액</div>
+        <div class="ra" id="res">10만원</div>
+        <div class="rbd" id="rbd"></div>
+      </div>
+      <div class="nb">⚠️ 건강보험료 확정 기준표는 <strong>5월 중 별도 발표</strong> 예정. 월소득 기준은 중위소득 150% 참고치이며, 실제 판정은 건강보험료로 결정됩니다.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 03. 신청 요일 -->
+<section class="fi" style="margin-bottom:36px;">
+  <div class="sh"><div class="sn">03</div><div><div class="st">내 신청 요일 확인</div><div class="sd">첫 주 5부제 — 출생연도 끝자리를 입력하세요</div></div></div>
+  <div class="card" style="max-width:470px;">
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:4px;">
+      <input type="number" class="fc" id="yi" min="0" max="9" placeholder="출생연도 끝자리 (0~9)" oninput="cy(this.value)" style="max-width:200px;">
+      <span id="yrt" style="font-family:var(--fd);font-size:14px;font-weight:700;color:var(--ac);white-space:nowrap;"></span>
+    </div>
+    <div class="yg">
+      <div class="yi" id="ym"><div class="yd">월</div><div class="yn">1·6</div></div>
+      <div class="yi" id="yt"><div class="yd">화</div><div class="yn">2·7</div></div>
+      <div class="yi" id="yw"><div class="yd">수</div><div class="yn">3·8</div></div>
+      <div class="yi" id="yh"><div class="yd">목</div><div class="yn">4·9</div></div>
+      <div class="yi" id="yf"><div class="yd">금</div><div class="yn">5·0</div></div>
+    </div>
+    <div class="ynote">※ 1차 신청(4/27~5/8) 첫 주만 적용 · 이후엔 요일 무관<br>※ 2차 신청(5/18~7/3): 소득 하위 70% 일반 가구</div>
+  </div>
+</section>
+
+<!-- 04. 공유 -->
+<section class="fi" style="margin-bottom:36px;">
+  <div class="sh"><div class="sn">04</div><div><div class="st">결과 공유하기</div><div class="sd">가족·지인에게 알려주세요</div></div></div>
+  <div class="card">
+    <div class="stxt" id="stxt">위 항목을 입력하면 공유 문구가 자동 생성됩니다.</div>
+    <div class="br">
+      <button class="btn bc" onclick="cp()">텍스트 복사</button>
+    </div>
+    <div class="ck" id="ckok">✓ 복사 완료!</div>
+  </div>
+</section>
+
+<div class="ad"><!-- Google AdSense 코드 삽입 --><span>광고 영역</span></div>
+
+<!-- 05. 표 -->
+<section class="fi">
+  <div class="sh"><div class="sn">05</div><div><div class="st">지역·계층별 지원금 한눈에 보기</div></div></div>
+  <div class="card" style="overflow-x:auto;">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>계층 / 지역</th>
+          <th style="text-align:center;">수도권</th>
+          <th style="text-align:center;">일반 비수도권</th>
+          <th style="text-align:center;">우대지역</th>
+          <th style="text-align:center;color:var(--ac);">특별지역</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>일반 (하위 70%)</td><td style="text-align:center;">10만원</td><td style="text-align:center;">15만원</td><td style="text-align:center;">20만원</td><td class="hi" style="text-align:center;">25만원</td></tr>
+        <tr><td>차상위·한부모</td><td style="text-align:center;">45만원</td><td style="text-align:center;">50만원</td><td style="text-align:center;">50만원</td><td class="hi" style="text-align:center;">50만원</td></tr>
+        <tr><td>기초생활수급자</td><td style="text-align:center;">55만원</td><td class="hi" style="text-align:center;">60만원</td><td class="hi" style="text-align:center;">60만원</td><td class="hi" style="text-align:center;">60만원</td></tr>
+      </tbody>
+    </table>
+    <div class="tnote">※ 사용 기한 2026.8.31 · 미사용 잔액 전액 소멸 · 건강보험료 확정 기준은 5월 중 별도 발표</div>
+  </div>
+</section>
+
+</main>
+
+<footer class="ftr">
+  <p>본 사이트는 정부 공식 사이트가 아닌 민간 정보 제공 서비스입니다.</p>
+  <p style="margin-top:3px;">공식 정보: <a href="https://www.mois.go.kr" target="_blank">행정안전부 mois.go.kr</a> · <a href="https://www.gov.kr" target="_blank">정부24 gov.kr</a></p>
+  <p style="margin-top:7px;">지도: 국토지리정보원 공간정보 오픈플랫폼(브이월드) · © 2026 고유가피해지원금 계산기</p>
+</footer>
+
+<script>
+// =====================
+// 지역 데이터
+// =====================
+const VWORLD_KEY = 'BF1E3A19-DD48-340B-942F-AE29B82ACA48';
+
+const RD = [
+  {n:"서울",g:"capital",kw:["서울"]},
+  {n:"인천",g:"capital",kw:["인천"]},
+  {n:"경기",g:"capital",kw:["수원","성남","안양","안산","용인","평택","의정부","고양","광명","시흥","군포","하남","오산","이천","안성","김포","화성","파주","양주","포천","여주","과천","의왕","동두천"]},
+  {n:"강화군",g:"preferred",kw:["강화"]},
+  {n:"옹진군",g:"preferred",kw:["옹진"]},
+  {n:"가평군",g:"preferred",kw:["가평"]},
+  {n:"연천군",g:"preferred",kw:["연천"]},
+  {n:"부산",g:"general",kw:["부산 강서","부산 금정","부산 기장","부산 사상","부산 수영","부산 해운대","부산 중구","부산 동래"]},
+  {n:"부산 동구",g:"preferred",kw:["부산 동구"]},
+  {n:"부산 서구",g:"preferred",kw:["부산 서구"]},
+  {n:"부산 영도구",g:"preferred",kw:["영도"]},
+  {n:"대구",g:"general",kw:["대구 달서","대구 달성","대구 수성","대구 중구"]},
+  {n:"대구 군위",g:"preferred",kw:["군위"]},
+  {n:"대구 남구",g:"preferred",kw:["대구 남구"]},
+  {n:"대구 서구",g:"preferred",kw:["대구 서구"]},
+  {n:"광주",g:"general",kw:["광주 광산","광주 남구","광주 동구","광주 북구","광주 서구"]},
+  {n:"대전",g:"general",kw:["대전"]},
+  {n:"울산",g:"general",kw:["울산"]},
+  {n:"세종",g:"general",kw:["세종"]},
+  {n:"강원",g:"general",kw:["춘천","원주","강릉","속초","동해","인제"]},
+  {n:"고성군(강원)",g:"preferred",kw:["강원 고성"]},
+  {n:"삼척시",g:"preferred",kw:["삼척"]},
+  {n:"양양군",g:"preferred",kw:["양양"]},
+  {n:"영월군",g:"preferred",kw:["영월"]},
+  {n:"정선군",g:"preferred",kw:["정선"]},
+  {n:"철원군",g:"preferred",kw:["철원"]},
+  {n:"태백시",g:"preferred",kw:["태백"]},
+  {n:"평창군",g:"preferred",kw:["평창"]},
+  {n:"홍천군",g:"preferred",kw:["홍천"]},
+  {n:"횡성군",g:"preferred",kw:["횡성"]},
+  {n:"양구군",g:"special",kw:["양구"]},
+  {n:"화천군",g:"special",kw:["화천"]},
+  {n:"충북",g:"general",kw:["청주","충주","청원","증평","진천"]},
+  {n:"옥천군",g:"preferred",kw:["옥천"]},
+  {n:"제천시",g:"preferred",kw:["제천"]},
+  {n:"보은군",g:"special",kw:["보은"]},
+  {n:"영동군",g:"special",kw:["영동"]},
+  {n:"괴산군",g:"special",kw:["괴산"]},
+  {n:"단양군",g:"special",kw:["단양"]},
+  {n:"충남",g:"general",kw:["천안","아산","당진","홍성"]},
+  {n:"공주시",g:"preferred",kw:["공주"]},
+  {n:"금산군",g:"preferred",kw:["금산"]},
+  {n:"논산시",g:"preferred",kw:["논산"]},
+  {n:"보령시",g:"preferred",kw:["보령"]},
+  {n:"예산군",g:"preferred",kw:["예산"]},
+  {n:"태안군",g:"preferred",kw:["태안"]},
+  {n:"부여군",g:"special",kw:["부여"]},
+  {n:"서천군",g:"special",kw:["서천"]},
+  {n:"청양군",g:"special",kw:["청양"]},
+  {n:"전북",g:"general",kw:["전주","익산","군산"]},
+  {n:"김제시",g:"preferred",kw:["김제"]},
+  {n:"남원시",g:"preferred",kw:["남원"]},
+  {n:"정읍시",g:"preferred",kw:["정읍"]},
+  {n:"고창군",g:"special",kw:["고창"]},
+  {n:"무주군",g:"special",kw:["무주"]},
+  {n:"부안군",g:"special",kw:["부안"]},
+  {n:"순창군",g:"special",kw:["순창"]},
+  {n:"임실군",g:"special",kw:["임실"]},
+  {n:"장수군",g:"special",kw:["장수"]},
+  {n:"진안군",g:"special",kw:["진안"]},
+  {n:"전남",g:"general",kw:["목포","여수","순천","나주","광양","무안"]},
+  {n:"담양군",g:"preferred",kw:["담양"]},
+  {n:"영광군",g:"preferred",kw:["영광"]},
+  {n:"영암군",g:"preferred",kw:["영암"]},
+  {n:"진도군",g:"preferred",kw:["진도"]},
+  {n:"화순군",g:"preferred",kw:["화순"]},
+  {n:"강진군",g:"special",kw:["강진"]},
+  {n:"고흥군",g:"special",kw:["고흥"]},
+  {n:"곡성군",g:"special",kw:["곡성"]},
+  {n:"구례군",g:"special",kw:["구례"]},
+  {n:"보성군",g:"special",kw:["보성"]},
+  {n:"신안군",g:"special",kw:["신안"]},
+  {n:"완도군",g:"special",kw:["완도"]},
+  {n:"장성군",g:"special",kw:["장성"]},
+  {n:"장흥군",g:"special",kw:["장흥"]},
+  {n:"함평군",g:"special",kw:["함평"]},
+  {n:"해남군",g:"special",kw:["해남"]},
+  {n:"경북",g:"general",kw:["포항","경주","김천","구미","경산","칠곡"]},
+  {n:"고령군",g:"preferred",kw:["고령"]},
+  {n:"문경시",g:"preferred",kw:["문경"]},
+  {n:"성주군",g:"preferred",kw:["성주"]},
+  {n:"안동시",g:"preferred",kw:["안동"]},
+  {n:"영주시",g:"preferred",kw:["영주"]},
+  {n:"영천시",g:"preferred",kw:["영천"]},
+  {n:"울릉군",g:"preferred",kw:["울릉"]},
+  {n:"울진군",g:"preferred",kw:["울진"]},
+  {n:"봉화군",g:"special",kw:["봉화"]},
+  {n:"상주시",g:"special",kw:["상주"]},
+  {n:"영덕군",g:"special",kw:["영덕"]},
+  {n:"영양군",g:"special",kw:["영양"]},
+  {n:"의성군",g:"special",kw:["의성"]},
+  {n:"청도군",g:"special",kw:["청도"]},
+  {n:"청송군",g:"special",kw:["청송"]},
+  {n:"경남",g:"general",kw:["창원","진주","김해","양산","거제","통영"]},
+  {n:"거창군",g:"preferred",kw:["거창"]},
+  {n:"밀양시",g:"preferred",kw:["밀양"]},
+  {n:"산청군",g:"preferred",kw:["산청"]},
+  {n:"창녕군",g:"preferred",kw:["창녕"]},
+  {n:"함안군",g:"preferred",kw:["함안"]},
+  {n:"고성군(경남)",g:"special",kw:["경남 고성"]},
+  {n:"남해군",g:"special",kw:["남해"]},
+  {n:"의령군",g:"special",kw:["의령"]},
+  {n:"하동군",g:"special",kw:["하동"]},
+  {n:"함양군",g:"special",kw:["함양"]},
+  {n:"합천군",g:"special",kw:["합천"]},
+  {n:"제주",g:"general",kw:["제주","서귀포"]},
+];
+
+const GL = {special:"인구감소 특별지역", preferred:"인구감소 우대지역", general:"일반 비수도권", capital:"수도권"};
+const BASE = {special:25, preferred:20, general:15, capital:10};
+const TADD = {general:0, hanobu:30, basic:40};
+const TL = {general:"일반", hanobu:"차상위·한부모", basic:"기초수급자"};
+const EX = {special:5, preferred:5, general:5, capital:0};
+const IL = {1:384,2:629,3:806,4:974,5:1148,6:1318,7:1487,8:1656,9:1825,10:1994};
+
+// 지역별 색상
+const GC = {special:"#c94a1a", preferred:"#1a7a52", general:"#1a5fa8", capital:"#9b9890"};
+
+// =====================
+// V-World 지도 초기화
+// =====================
+let map = null;
+let currentPolygon = null;
+let allPolygons = [];
+let activeFilter = null;
+
+function initVworldMap() {
+  try {
+    const mapOption = {
+      mapId: "vmap",
+      initPosition: new vw.CameraPosition(
+        new vw.CoordZ(127.5, 36.0, 1200000),
+        new vw.Direction(0, -90, 0)
+      ),
+      logo: true,
+      navigation: true
+    };
+
+    // V-World 2D 지도 초기화
+    vw.ol3.init({
+      mapId: "vmap",
+      key: VWORLD_KEY,
+      center: [127.5, 36.0],
+      zoom: 7,
+      basemapType: vw.ol3.BasemapType.GRAPHIC,
+      controlDensity: vw.ol3.DensityType.DEFAULT,
+      interactionDensity: vw.ol3.DensityType.DEFAULT,
+      controlsAutoArrange: true,
+      homePosition: vw.ol3.HomePosType.KOREA_JUNGBU,
+      initPosition: vw.ol3.HomePosType.KOREA_JUNGBU
+    });
+
+    // 지도 로딩 완료
+    document.getElementById('map-loading').style.display = 'none';
+    loadSidoPolygons();
+  } catch(e) {
+    console.error('V-World 초기화 오류:', e);
+    // 폴백: 지도 로딩 실패 시 안내 메시지
+    document.getElementById('map-loading').innerHTML =
+      '<span style="color:var(--ac);">⚠️ localhost 환경에서 V-World 지도가 표시됩니다.<br>배포 도메인 등록 후 정상 작동합니다.</span>';
+  }
+}
+
+// 시도 경계 폴리곤 로드 (V-World WFS API)
+function loadSidoPolygons() {
+  // 전국 시도 목록
+  const sidoList = ['서울특별시','인천광역시','경기도','강원특별자치도','충청북도','충청남도','세종특별자치시','대전광역시','전북특별자치도','전라남도','광주광역시','경상북도','대구광역시','경상남도','부산광역시','울산광역시','제주특별자치도'];
+
+  sidoList.forEach(sido => {
+    const url = `https://api.vworld.kr/req/data?service=data&request=GetFeature&data=LT_C_ADSIDO_INFO&key=${VWORLD_KEY}&domain=localhost&geometry=true&attribute=true&size=100&page=1&attrFilter=ctp_kor_nm:=:${encodeURIComponent(sido)}&columns=ctp_kor_nm&format=json`;
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        if (data?.response?.result?.featureCollection?.features) {
+          data.response.result.featureCollection.features.forEach(f => {
+            drawSidoPolygon(f, sido);
+          });
+        }
+      })
+      .catch(e => console.log('시도 경계 로드:', sido, e));
+  });
+}
+
+// 시도 폴리곤 그리기
+function drawSidoPolygon(feature, sidoName) {
+  try {
+    const grade = getSidoGrade(sidoName);
+    const color = GC[grade];
+    const coords = feature.geometry.coordinates;
+
+    const polygonStyle = new vw.ol3.Style({
+      fill: new vw.ol3.Fill({ color: hexToRgba(color, 0.45) }),
+      stroke: new vw.ol3.Stroke({ color: '#ffffff', width: 1.5 })
+    });
+
+    const hoverStyle = new vw.ol3.Style({
+      fill: new vw.ol3.Fill({ color: hexToRgba(color, 0.7) }),
+      stroke: new vw.ol3.Stroke({ color: '#1a1916', width: 2 })
+    });
+
+    let polygon;
+    if (feature.geometry.type === 'Polygon') {
+      polygon = new vw.ol3.Polygon(coords);
+    } else if (feature.geometry.type === 'MultiPolygon') {
+      polygon = new vw.ol3.MultiPolygon(coords);
+    }
+
+    if (polygon) {
+      polygon.setStyle(polygonStyle);
+      polygon._sidoName = sidoName;
+      polygon._grade = grade;
+      polygon._normalStyle = polygonStyle;
+      polygon._hoverStyle = hoverStyle;
+      allPolygons.push(polygon);
+
+      polygon.addEventListener('click', function() {
+        pickRegion(sidoName, grade);
+        document.getElementById('addr-in').value = sidoName;
+      });
+
+      polygon.addEventListener('mouseover', function() {
+        this.setStyle(this._hoverStyle);
+      });
+
+      polygon.addEventListener('mouseout', function() {
+        this.setStyle(this._normalStyle);
+      });
+
+      vw.ol3.addGeometry(polygon);
+    }
+  } catch(e) {
+    console.log('폴리곤 그리기 오류:', sidoName, e);
+  }
+}
+
+// 시도명 → 지원금 등급 매핑
+function getSidoGrade(sidoName) {
+  const capitalSidos = ['서울특별시','인천광역시','경기도'];
+  if (capitalSidos.includes(sidoName)) return 'capital';
+  return 'general';
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// 등급 필터링
+function filterGrade(grade) {
+  activeFilter = activeFilter === grade ? null : grade;
+  allPolygons.forEach(p => {
+    if (!activeFilter) {
+      p.setStyle(p._normalStyle);
+    } else {
+      if (p._grade === activeFilter) {
+        p.setStyle(p._normalStyle);
+      } else {
+        p.setStyle(new vw.ol3.Style({
+          fill: new vw.ol3.Fill({ color: 'rgba(200,200,200,0.1)' }),
+          stroke: new vw.ol3.Stroke({ color: '#ddd', width: 0.5 })
+        }));
+      }
+    }
+  });
+}
+
+// =====================
+// 지역 선택 공통 처리
+// =====================
+function pickRegion(name, grade) {
+  document.getElementById('iph').textContent = '선택된 지역';
+  document.getElementById('ipr').textContent = name;
+  const tc = {special:'t-sp', preferred:'t-pr', general:'t-gn', capital:'t-cp'}[grade];
+  document.getElementById('ipt').innerHTML = `<span class="igt ${tc}">${GL[grade]}</span>`;
+  document.getElementById('ipa').textContent = BASE[grade] + '만원';
+  document.getElementById('ipn').textContent = grade !== 'capital' ? '비수도권 취약계층 +5만원 가산' : '수도권은 지역 가산 없음';
+  document.getElementById('cr').value = grade;
+  ca();
+}
+
+// 검색 자동완성
+function srch(v) {
+  const ac = document.getElementById('acd');
+  if (!v || v.length < 1) { ac.style.display = 'none'; return; }
+  const kw = v.trim().toLowerCase();
+  const hits = RD.filter(r => r.n.toLowerCase().includes(kw) || (r.kw && r.kw.some(k => k.toLowerCase().includes(kw))));
+  if (!hits.length) { ac.style.display = 'none'; return; }
+  ac.innerHTML = '';
+  hits.slice(0, 8).forEach(r => {
+    const d = document.createElement('div');
+    d.className = 'aci';
+    d.innerHTML = `<span>${r.n}</span><span style="display:flex;gap:7px;"><span class="acg">${GL[r.g]}</span><span class="aca">${BASE[r.g]}만원</span></span>`;
+    d.onclick = () => {
+      document.getElementById('addr-in').value = r.n;
+      ac.style.display = 'none';
+      pickRegion(r.n, r.g);
+    };
+    ac.appendChild(d);
+  });
+  ac.style.display = 'block';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#addr-in') && !e.target.closest('#acd'))
+    document.getElementById('acd').style.display = 'none';
+});
+
+// =====================
+// 계산기
+// =====================
+function ca() {
+  const reg = document.getElementById('cr').value;
+  const tier = document.getElementById('ct2').value;
+  const mem = Math.max(1, Math.min(10, parseInt(document.getElementById('cm').value) || 1));
+  const per = BASE[reg] + TADD[tier] + (tier !== 'general' ? EX[reg] : 0);
+  document.getElementById('res').textContent = per + '만원';
+  let bd = `${BASE[reg]}만원(지역)`;
+  if (TADD[tier] > 0) bd += ` + ${TADD[tier]}만원(${TL[tier]})`;
+  if (tier !== 'general' && EX[reg] > 0) bd += ` + ${EX[reg]}만원(비수도권 가산)`;
+  bd += ` = ${per}만원/인`;
+  if (mem > 1) bd += `\n가족 ${mem}명 합산: ${per * mem}만원`;
+  document.getElementById('rbd').textContent = bd;
+
+  const ig = document.getElementById('ig');
+  const ir = document.getElementById('ir');
+  if (tier === 'general') {
+    ig.style.display = 'block';
+    const inc = parseFloat(document.getElementById('ci').value);
+    const lim = IL[Math.min(mem, 10)];
+    if (!inc || isNaN(inc)) {
+      ir.className = 'ic na'; ir.textContent = '소득을 입력하면 하위 70% 여부를 확인합니다';
+    } else if (inc <= lim) {
+      ir.className = 'ic ok'; ir.textContent = `✓ 소득 하위 70% 기준 충족 가능성 높음 (${mem}인 기준 ${lim}만원 이하)`;
+    } else {
+      ir.className = 'ic no'; ir.textContent = `✕ 기준 초과 가능성 — ${mem}인 기준 ${lim}만원 이하 (건강보험료 최종 확인 필요)`;
+    }
+  } else ig.style.display = 'none';
+  us(reg, tier, mem, per);
+}
+
+function us(reg, tier, mem, per) {
+  const rn = document.getElementById('ipr').textContent;
+  const rl = rn === '—' ? GL[reg] : rn;
+  const inc = parseFloat(document.getElementById('ci').value);
+  const lim = IL[Math.min(mem, 10)];
+  let im = '';
+  if (tier === 'general' && inc && !isNaN(inc))
+    im = inc <= lim ? '\n✓ 소득 하위 70% 충족 가능성 높음' : '\n✕ 소득 기준 초과 가능성 (건강보험료 확인 필요)';
+  const txt = `💰 2026 고유가 피해지원금 계산해봤어요!\n\n📍 ${rl} (${GL[reg]})\n👤 ${TL[tier]} · ${mem}인 가구\n→ 예상 수령액: ${per}만원${mem > 1 ? ' (1인 기준)' : ''}${mem > 1 ? '\n→ 가족 합산: ' + (per * mem) + '만원' : ''}${im}\n\n📅 1차 신청: 4월 27일~\n⏰ 사용기한: 8월 31일 (미사용 소멸!)\n\n지원금 계산기로 내 금액 확인 👉 고유가피해지원금.kr`;
+  document.getElementById('stxt').textContent = txt;
+}
+
+// =====================
+// 신청 요일
+// =====================
+function cy(v) {
+  ['ym','yt','yw','yh','yf'].forEach(id => {
+    document.getElementById(id).classList.remove('ya');
+    document.getElementById(id).querySelector('.yd').style.color = '';
+  });
+  const n = parseInt(v);
+  if (v === '' || isNaN(n) || n < 0 || n > 9) { document.getElementById('yrt').textContent = ''; return; }
+  const mp = {1:'ym',6:'ym',2:'yt',7:'yt',3:'yw',8:'yw',4:'yh',9:'yh',5:'yf',0:'yf'};
+  const dl = {1:'월요일',6:'월요일',2:'화요일',7:'화요일',3:'수요일',8:'수요일',4:'목요일',9:'목요일',5:'금요일',0:'금요일'};
+  document.getElementById(mp[n]).classList.add('ya');
+  document.getElementById('yrt').textContent = '→ ' + dl[n] + ' 신청';
+}
+
+// =====================
+// 공유
+// =====================
+function cp() {
+  navigator.clipboard.writeText(document.getElementById('stxt').textContent).then(() => {
+    const el = document.getElementById('ckok'); el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 2000);
+  });
+}
+
+
+// =====================
+// D-Day
+// =====================
+function dday() {
+  const d = Math.ceil((new Date('2026-08-31T23:59:59') - new Date()) / 86400000);
+  const v = d > 0 ? String(d) : '종료';
+  document.getElementById('dd-t').textContent = v;
+  document.getElementById('dd-h').textContent = v;
+}
+
+// =====================
+// 스크롤 페이드인
+// =====================
+const obs = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fi').forEach(el => obs.observe(el));
+
+// =====================
+// 초기화
+// =====================
+dday();
+ca();
+
+// V-World API 로딩 완료 후 지도 초기화
+window.onload = function() {
+  if (typeof vw !== 'undefined' && vw.ol3) {
+    initVworldMap();
+  } else {
+    // API 로딩 대기
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries++;
+      if (typeof vw !== 'undefined' && vw.ol3) {
+        clearInterval(timer);
+        initVworldMap();
+      } else if (tries > 20) {
+        clearInterval(timer);
+        document.getElementById('map-loading').innerHTML =
+          '<span style="padding:16px;text-align:center;color:var(--tx2);">지도를 불러올 수 없습니다.<br>인증키 도메인 설정을 확인해주세요.</span>';
+      }
+    }, 500);
+  }
+};
+</script>
+</body>
+</html>
