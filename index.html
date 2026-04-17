@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4837790282394503"
-     crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="2026 고유가 피해지원금 — 내 지역과 소득을 입력하면 예상 수령액을 즉시 계산. 전국 지역별 지도, 5부제 신청 요일 확인.">
@@ -162,6 +160,33 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 /* AD */
 .ad{background:var(--sur2);border:1px dashed var(--brd);border-radius:var(--r);min-height:88px;display:flex;align-items:center;justify-content:center;color:var(--tx3);font-size:12px;margin:16px 0;text-align:center;}
 
+/* 쿠팡 파트너스 면책 문구 */
+.cp-notice{background:#f5f3ee;border-bottom:1px solid var(--brd2);color:var(--tx2);font-size:11px;text-align:center;padding:6px 12px;line-height:1.4;}
+.cp-notice b{color:var(--tx);font-weight:700;}
+
+/* 스미싱 경고 배너 (상단) */
+.scam-bar{background:#fff8e1;border-bottom:1px solid #f5d77a;color:#7a5500;text-align:center;padding:8px 12px;font-size:12px;line-height:1.5;}
+.scam-bar b{color:#c94a1a;font-weight:700;}
+
+/* 스미싱 안내 카드 (하단) */
+.scam-card{background:#fff8e1;border:1px solid #f5d77a;border-left:4px solid #c94a1a;border-radius:var(--r);padding:18px;margin:24px 0;}
+.scam-card h3{font-family:var(--fd);font-size:15px;font-weight:700;color:#7a5500;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.scam-card h3 b{color:#c94a1a;}
+.scam-card p{font-size:13px;color:var(--tx);line-height:1.7;margin-bottom:10px;}
+.scam-card .scam-rule{background:#fff;border:1px solid #f5d77a;border-radius:8px;padding:12px;margin:10px 0;}
+.scam-card .scam-rule strong{color:#c94a1a;font-weight:700;}
+.scam-card ul{list-style:none;padding:0;margin:10px 0 0;font-size:12px;color:var(--tx2);}
+.scam-card ul li{padding:5px 0;border-top:1px dashed rgba(122,85,0,.2);}
+.scam-card ul li:first-child{border-top:none;}
+.scam-card ul li b{color:var(--tx);font-weight:700;}
+.scam-card .scam-src{font-size:10px;color:var(--tx3);margin-top:10px;text-align:right;}
+
+/* 광고 영역 컨테이너 */
+.ad-wrap{max-width:980px;margin:24px auto;padding:0 16px;}
+.ad-label{font-size:10px;color:var(--tx3);text-align:center;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;}
+.ad-box{display:flex;justify-content:center;align-items:center;min-height:140px;}
+.ad-box iframe{max-width:100%;}
+
 /* FOOTER */
 .ftr{background:var(--tx);color:rgba(255,255,255,.38);text-align:center;padding:26px 16px;font-size:12px;line-height:1.8;}
 .ftr a{color:rgba(255,255,255,.48);text-decoration:none;}
@@ -177,7 +202,11 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 </head>
 <body>
 
+<div class="cp-notice">🛒 이 페이지는 <b>쿠팡 파트너스</b> 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
+
 <div class="dday-bar">사용 기한 <span id="dd-t">—</span>일 남았습니다 — 8월 31일까지 미사용 전액 소멸</div>
+
+<div class="scam-bar">⚠️ <b>URL 링크가 포함된 고유가 피해지원금 문자·알림은 100% 사기</b>입니다 — 정부·카드사·지역화폐사는 링크 발송 안 함</div>
 
 <header class="hdr">
   <div class="hdr-in">
@@ -199,10 +228,6 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
     </div>
   </div>
 </section>
-
-<div style="max-width:980px;margin:0 auto;padding:0 16px;">
-  <div class="ad"><!-- Google AdSense 코드 삽입 --><span>광고 영역</span></div>
-</div>
 
 <main class="page">
 
@@ -250,7 +275,15 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
   </div>
 </section>
 
-<div class="ad"><!-- Google AdSense 코드 삽입 --><span>광고 영역</span></div>
+<div class="ad-wrap">
+  <div class="ad-label">— 추천 상품 —</div>
+  <div class="ad-box">
+    <script src="https://ads-partners.coupang.com/g.js"></script>
+    <script>
+      new PartnersCoupang.G({"id":981485,"template":"carousel","trackingCode":"AF5093707","width":"680","height":"140","tsource":""});
+    </script>
+  </div>
+</div>
 
 <!-- 02. 계산기 -->
 <section class="fi" style="margin-bottom:36px;">
@@ -369,7 +402,15 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
   </div>
 </section>
 
-<div class="ad"><!-- Google AdSense 코드 삽입 --><span>광고 영역</span></div>
+<div class="ad-wrap">
+  <div class="ad-label">— 추천 상품 —</div>
+  <div class="ad-box">
+    <script src="https://ads-partners.coupang.com/g.js"></script>
+    <script>
+      new PartnersCoupang.G({"id":981486,"template":"carousel","trackingCode":"AF5093707","width":"680","height":"140","tsource":""});
+    </script>
+  </div>
+</div>
 
 <!-- 05. 표 -->
 <section class="fi">
@@ -392,6 +433,28 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
       </tbody>
     </table>
     <div class="tnote">※ 사용 기한 2026.8.31 · 미사용 잔액 전액 소멸 · 건강보험료 확정 기준은 5월 중 별도 발표</div>
+  </div>
+</section>
+
+<!-- 06. 스미싱 주의 -->
+<section class="fi">
+  <div class="sh"><div class="sn">06</div><div><div class="st">스미싱(문자결제사기) 주의</div><div class="sd">정부 공식 발표 — 의심 문자는 클릭하지 마세요</div></div></div>
+  <div class="scam-card">
+    <h3>⚠️ <span>URL 링크가 포함된 문자·알림은 <b>100% 사기</b>입니다</span></h3>
+    <p>정부·카드사·지역화폐사는 고유가 피해지원금 관련 안내에 <strong>인터넷 주소 바로가기(URL·링크)를 포함한 문자나 SNS를 일절 발송하지 않습니다.</strong> 배너 링크나 앱 푸시도 마찬가지입니다.</p>
+    <div class="scam-rule">
+      📱 <strong>다음과 같은 문자가 오면 모두 사기입니다</strong><br>
+      • "지급대상 확인 → 클릭" / "카드 충전 바로가기" 등 링크 포함 문자<br>
+      • 안내를 가장한 앱 설치 유도<br>
+      • 출처 불명 SNS 메시지
+    </div>
+    <p style="font-weight:700;color:#7a5500;margin-top:12px;">📞 의심 문자를 받으셨다면</p>
+    <ul>
+      <li><b>국민비서 사전 알림서비스</b>를 활용하면 정부 공식 알림만 받을 수 있습니다</li>
+      <li><b>한국인터넷진흥원(KISA) 스미싱 확인서비스</b> · 상담 ☎ <b>118</b></li>
+      <li>피해 발생 시 <b>경찰청 전기통신금융사기 통합대응단</b> ☎ <b>1394</b></li>
+    </ul>
+    <div class="scam-src">자료: 행정안전부 보도참고자료(2026.4.16)</div>
   </div>
 </section>
 
