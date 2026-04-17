@@ -269,7 +269,7 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
       </div>
       <div class="ab">
         <strong>취약계층 추가 지원</strong>
-        기초수급자 +40만원<br>차상위·한부모 +30만원<br>비수도권 거주 시 +5만원
+        기초수급자: 수도권 55만원, 비수도권 60만원<br>차상위·한부모: 수도권 45만원, 비수도권 50만원
       </div>
     </div>
   </div>
@@ -582,10 +582,15 @@ const RD = [
 ];
 
 const GL = {special:"인구감소 특별지역", preferred:"인구감소 우대지역", general:"일반 비수도권", capital:"수도권"};
+// 정부 공식 발표 기준 지급액 표 [계층][지역]
+const PAYOUT = {
+  general:  {capital:10, general:15, preferred:20, special:25},
+  hanobu:   {capital:45, general:50, preferred:50, special:50},
+  basic:    {capital:55, general:60, preferred:60, special:60}
+};
+// 자동완성/지도 라벨에 표시할 일반(70%) 기준 금액
 const BASE = {special:25, preferred:20, general:15, capital:10};
-const TADD = {general:0, hanobu:30, basic:40};
 const TL = {general:"일반", hanobu:"차상위·한부모", basic:"기초수급자"};
-const EX = {special:5, preferred:5, general:5, capital:0};
 const IL = {1:384,2:629,3:806,4:974,5:1148,6:1318,7:1487,8:1656,9:1825,10:1994};
 const GC = {special:"#c94a1a", preferred:"#1a7a52", general:"#1a5fa8", capital:"#9b9890"};
 
@@ -875,12 +880,23 @@ function ca() {
   const reg = document.getElementById('cr').value;
   const tier = document.getElementById('ct2').value;
   const mem = Math.max(1, Math.min(10, parseInt(document.getElementById('cm').value) || 1));
-  const per = BASE[reg] + TADD[tier] + (tier !== 'general' ? EX[reg] : 0);
+  const per = PAYOUT[tier][reg];
   document.getElementById('res').textContent = per + '만원';
-  let bd = `${BASE[reg]}만원(지역)`;
-  if (TADD[tier] > 0) bd += ` + ${TADD[tier]}만원(${TL[tier]})`;
-  if (tier !== 'general' && EX[reg] > 0) bd += ` + ${EX[reg]}만원(비수도권 가산)`;
-  bd += ` = ${per}만원/인`;
+
+  // 수식 분해 표시 (정부 발표 구조에 맞게 단순화)
+  let bd;
+  if (tier === 'general') {
+    // 일반(70%): 지역 4단계 차등이 그대로 지급액
+    bd = `${GL[reg]} 거주: ${per}만원/인`;
+  } else {
+    // 취약계층: 수도권/비수도권 2단계 구분
+    const sudo = (reg === 'capital');
+    const baseAmt = PAYOUT[tier]['capital'];
+    const addAmt = per - baseAmt;
+    bd = `${TL[tier]} 기본 ${baseAmt}만원`;
+    if (!sudo && addAmt > 0) bd += ` + 비수도권 가산 ${addAmt}만원`;
+    bd += ` = ${per}만원/인`;
+  }
   if (mem > 1) bd += `\n가족 ${mem}명 합산: ${per * mem}만원`;
   document.getElementById('rbd').textContent = bd;
 
