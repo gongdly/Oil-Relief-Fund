@@ -71,7 +71,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fb);font-size:15px;l
 .sn{font-family:var(--fd);font-size:28px;font-weight:700;color:var(--brd);line-height:1;}
 .st{font-family:var(--fd);font-size:17px;font-weight:700;}
 .sd{font-size:12px;color:var(--tx2);margin-top:1px;}
-.fi{opacity:0;transform:translateY(13px);transition:opacity .5s,transform .5s;}
+.fi{opacity:0;transform:translateY(13px);transition:opacity .5s,transform .5s;margin-bottom:22px;}
 .fi.vis{opacity:1;transform:none;}
 
 /* MAP SECTION */
@@ -154,6 +154,17 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 .unit-wrap{position:relative;}
 .unit-wrap input{padding-right:42px !important;}
 .unit-wrap .unit{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:var(--tx2);pointer-events:none;}
+
+/* 토글 섹션 헤더 (지자체 추가 지원금 등) */
+.toggle-sh{cursor:pointer;user-select:none;transition:background .15s;border-radius:var(--r);padding:4px 8px;margin:-4px -8px;align-items:center !important;}
+.toggle-sh:hover{background:rgba(26,122,82,.05);}
+.toggle-arrow{display:inline-block;font-size:14px;color:#1a7a52;transition:transform .25s;margin-left:auto;font-weight:700;}
+.toggle-sh.open .toggle-arrow{transform:rotate(180deg);}
+.toggle-body{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+.toggle-body.open{max-height:3000px;}
+.toggle-badge{display:inline-block;background:#1a7a52;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:middle;}
+.toggle-badge.gn-active{background:#c94a1a;animation:gn-pulse 1.5s ease infinite;}
+@keyframes gn-pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,74,26,.5);}50%{box-shadow:0 0 0 6px rgba(201,74,26,0);}}
 
 /* 월급→건보료 추정 도우미 */
 .est-box{background:#eef5ff;border:1px solid #c2d9f5;border-radius:var(--r);padding:11px 12px;margin-bottom:10px;}
@@ -255,6 +266,7 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
       <div class="stat"><span class="sv">3,600만명</span><span class="sl">2차 지급 대상</span></div>
       <div class="stat"><span class="sv">7/3</span><span class="sl">신청 마감일</span></div>
     </div>
+    <div style="display:inline-block;background:rgba(26,122,82,.18);border:1px solid rgba(26,122,82,.45);border-radius:999px;padding:6px 14px;margin-top:14px;font-size:12px;color:#9be3b8;font-weight:700;">💚 경남도민은 별도로 1인당 10만원 추가 수령 가능 (도 자체 사업)</div>
     <div class="scroll-hint">내 지역 확인하기<span class="arrow">↓</span></div>
   </div>
 </section>
@@ -262,7 +274,7 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 <main class="page">
 
 <!-- 01. 지도 -->
-<section class="fi" style="margin-bottom:36px;">
+<section class="fi">
   <div class="sh"><div class="sn">01</div><div><div class="st">내 지역 확인</div><div class="sd">지도를 클릭하거나 주소를 검색하세요</div></div></div>
   <div class="mw">
     <div class="mc">
@@ -316,7 +328,7 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 </div>
 
 <!-- 02. 계산기 -->
-<section class="fi" style="margin-bottom:36px;">
+<section class="fi">
   <div class="sh"><div class="sn">02</div><div><div class="st">수령액 + 대상 여부 계산기</div><div class="sd">2026년 3월 건강보험료로 소득 하위 70% 즉시 판정</div></div></div>
   <div class="g2">
     <div class="card">
@@ -396,13 +408,24 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
         <div class="ra" id="res">10만원</div>
         <div class="rbd" id="rbd"></div>
       </div>
+      <!-- 경남도민 생활지원금 가산 표시 (경남 지역 선택 시만 노출) -->
+      <div id="gnBox" style="display:none;background:#eff7f1;border:1px solid #b8d4be;border-radius:var(--r);padding:12px 14px;margin-top:10px;">
+        <div style="font-size:12px;font-weight:700;color:#1a7a52;margin-bottom:4px;">✚ 경남도민 생활지원금 (도 자체 사업)</div>
+        <div style="font-size:13px;color:#1a1916;line-height:1.5;" id="gnAmt">1인당 10만원 추가 (정부 지원금과 별개로 중복 수령 가능)</div>
+        <div style="font-size:11px;color:var(--tx2);margin-top:6px;line-height:1.5;">2026.3.18 기준 경남 주민등록 도민 · 신청 4.30~6.30 · 사용기한 7.31 · <a href="https://경남도민생활지원금.kr" target="_blank" style="color:#1a7a52;font-weight:700;">경남도민생활지원금.kr</a></div>
+      </div>
+      <!-- 총 합산 표시 (경남 지역 선택 시만 노출) -->
+      <div id="gnTotal" style="display:none;background:linear-gradient(135deg,#fef3ee 0%,#fef9e7 100%);border:1.5px solid #e8673a;border-radius:var(--r);padding:12px 14px;margin-top:8px;">
+        <div style="font-size:12px;font-weight:700;color:#7a3500;margin-bottom:4px;">💰 정부 + 경남도 합산 예상 수령액</div>
+        <div style="font-size:18px;font-weight:900;color:var(--ac);font-family:var(--fd);" id="gnTotalAmt">—</div>
+      </div>
       <div class="nb">⚠️ <strong>고액자산가 제외 기준</strong> — 가구 합산 ① 2025년 재산세 과세표준 12억원 초과(1주택 공시가 약 26.7억) 또는 ② 2024년 귀속 금융소득 2,000만원 초과 시 지급 제외. 본 계산은 참고용이며 최종 판정은 건강보험공단 조회 결과를 따릅니다.</div>
     </div>
   </div>
 </section>
 
 <!-- 03. 신청 요일 -->
-<section class="fi" style="margin-bottom:36px;">
+<section class="fi">
   <div class="sh"><div class="sn">03</div><div><div class="st">내 신청 요일 확인</div><div class="sd">1차·2차 신청 첫 주 5부제 — 출생연도 끝자리를 입력하세요</div></div></div>
   <div class="card">
 
@@ -464,7 +487,7 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 </section>
 
 <!-- 04. 공유 -->
-<section class="fi" style="margin-bottom:36px;">
+<section class="fi">
   <div class="sh"><div class="sn">04</div><div><div class="st">결과 공유하기</div><div class="sd">가족·지인에게 알려주세요</div></div></div>
   <div class="card">
     <div class="stxt" id="stxt">위 항목을 입력하면 공유 문구가 자동 생성됩니다.</div>
@@ -543,9 +566,77 @@ select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
   </div>
 </section>
 
-<!-- 07. 스미싱 주의 -->
+<!-- 07. 지자체 추가 지원금 (토글 - 경남 거주자만 자동 펼침) -->
+<section class="fi" id="sec-local">
+  <div class="sh toggle-sh" id="localTog" onclick="toggleLocal()">
+    <div class="sn">07</div>
+    <div style="flex:1;">
+      <div class="st">지자체 추가 지원금 <span class="toggle-badge" id="localBadge">경남 도민 대상</span></div>
+      <div class="sd" id="localSd">정부 지원금과 별개로 지급되는 지자체 자체 사업 — 헤더를 눌러 펼치기</div>
+    </div>
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div class="toggle-body" id="localBody">
+    <div style="padding-top:14px;">
+    <div class="card" style="border-left:4px solid #1a7a52;">
+    <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <div style="font-size:13px;font-weight:700;color:#1a7a52;margin-bottom:4px;">💚 경남도민 생활지원금 — 1인당 10만원 보편 지급</div>
+        <div style="font-size:12px;color:var(--tx2);line-height:1.6;">소득·재산 기준 없이 경상남도에 주민등록을 둔 모든 도민에게 1인당 10만원을 지급하는 도 자체 사업입니다. 정부 고유가 피해지원금과 <strong>중복 수령 가능</strong>합니다.</div>
+      </div>
+      <div style="flex:1;min-width:220px;">
+        <div style="font-size:13px;font-weight:700;color:#1a7a52;margin-bottom:4px;">💰 예산 3,288억원 (전액 도비)</div>
+        <div style="font-size:12px;color:var(--tx2);line-height:1.6;">박완수 경남도지사 발표(2026.4.21). 2026년 3월 18일 기준 경남 주민등록자가 대상이며, 신청 기간 중 출생아도 포함됩니다.</div>
+      </div>
+    </div>
+
+    <table class="tbl" style="margin-bottom:12px;">
+      <thead>
+        <tr><th>구분</th><th>경남도민 생활지원금</th><th>(참고) 정부 고유가 피해지원금</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>대상</td><td>경남 주민등록 전 도민</td><td>전국 소득 하위 70%</td></tr>
+        <tr><td>지급액</td><td>1인당 10만원</td><td>1인당 10~60만원 (지역·계층별 차등)</td></tr>
+        <tr><td>기준일</td><td>2026.3.18</td><td>2026.3.30</td></tr>
+        <tr><td>신청기간</td><td>2026.4.30 ~ 6.30</td><td>2차 5.18 ~ 7.3</td></tr>
+        <tr><td>사용기한</td><td>2026.7.31</td><td>2026.8.31</td></tr>
+        <tr><td>신청 채널</td><td>온라인 또는 읍·면·동 행정복지센터</td><td>카드사 앱·콜센터, 주민센터, 은행</td></tr>
+      </tbody>
+    </table>
+
+    <div style="background:#eff7f1;border-radius:var(--r);padding:11px 13px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:#1a7a52;margin-bottom:6px;">📱 온라인 신청</div>
+      <div style="font-size:13px;line-height:1.6;">
+        <a href="https://경남도민생활지원금.kr" target="_blank" style="color:#1a7a52;font-weight:700;">경남도민생활지원금.kr</a> (운영시간 06:00~23:00)<br>
+        지역사랑상품권 · 선불카드 · 신용·체크카드(농협/경남은행) 중 선택<br>
+        ※ 밀양·양산은 '코나아이' 앱으로도 신청 가능
+      </div>
+    </div>
+
+    <div style="background:#fef9e7;border-radius:var(--r);padding:11px 13px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:#7a5500;margin-bottom:6px;">🏢 오프라인 신청</div>
+      <div style="font-size:13px;line-height:1.6;">
+        기준일(2026.3.18) 주민등록상 주소지 읍·면·동 행정복지센터<br>
+        ※ 행정복지센터 방문 신청은 <strong>선불카드만</strong> 선택 가능<br>
+        ※ 외국인(영주권자 F-5·결혼이민자 F-6·난민인정자 F-2-4)은 행정복지센터 방문 신청 필수
+      </div>
+    </div>
+
+    <div class="ab" style="margin-top:8px;">
+      <strong>⚠️ 정부 지원금과 헷갈리지 마세요</strong>
+      ① 기준일·사용기한·신청 채널이 모두 다른 별개 사업입니다<br>
+      ② 정부 지원금만 받았더라도 경남 도민이면 별도로 신청해야 받을 수 있습니다<br>
+      ③ 사용 가능 매장은 동일하게 거주 시·군 내 연매출 30억 이하 소상공인 매장
+    </div>
+    <div class="tnote" style="margin-top:10px;">※ 자료: 경상남도 2026.4.21 발표 · 김해시·창원시 등 시·군 공지사항 · 정부 고유가 지원금과 무관한 도 자체 사업<br>※ 다른 지역도 시·군 단위 자체 지원금이 있을 수 있으니 거주지 시·군청 또는 정부24에서 확인하세요</div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08. 스미싱 주의 -->
 <section class="fi">
-  <div class="sh"><div class="sn">07</div><div><div class="st">스미싱(문자결제사기) 주의</div><div class="sd">정부 공식 발표 — 의심 문자는 클릭하지 마세요</div></div></div>
+  <div class="sh"><div class="sn">08</div><div><div class="st">스미싱(문자결제사기) 주의</div><div class="sd">정부 공식 발표 — 의심 문자는 클릭하지 마세요</div></div></div>
   <div class="scam-card">
     <h3>⚠️ <span>URL 링크가 포함된 문자·알림은 <b>100% 사기</b>입니다</span></h3>
     <p>정부·카드사·지역화폐사는 고유가 피해지원금 관련 안내에 <strong>인터넷 주소 바로가기(URL·링크)를 포함한 문자나 SNS를 일절 발송하지 않습니다.</strong> 배너 링크나 앱 푸시도 마찬가지입니다.</p>
@@ -674,7 +765,7 @@ const RD = [
   {n:"의성군",g:"special",kw:["의성"]},
   {n:"청도군",g:"special",kw:["청도"]},
   {n:"청송군",g:"special",kw:["청송"]},
-  {n:"경남",g:"general",kw:["창원","진주","김해","양산","거제","통영"]},
+  {n:"경남",g:"general",kw:["창원","진주","김해","양산","거제","통영","사천"]},
   {n:"거창군",g:"preferred",kw:["거창"]},
   {n:"밀양시",g:"preferred",kw:["밀양"]},
   {n:"산청군",g:"preferred",kw:["산청"]},
@@ -696,6 +787,18 @@ const PAYOUT = {
   hanobu:   {capital:45, general:50, preferred:50, special:50},
   basic:    {capital:55, general:60, preferred:60, special:60}
 };
+
+// === 경남도민 생활지원금 (지자체 자체 사업, 정부 지원금과 별개) ===
+// 2026.3.18 기준 경남 주민등록 전 도민 · 1인당 10만원 · 도비 3,288억원
+// 신청 2026.4.30~6.30 / 사용기한 2026.7.31
+const GN_BONUS = 10; // 1인당 만원
+const GN_NAMES = [
+  "경남","창원시","진주시","통영시","사천시","김해시","밀양시","거제시","양산시",
+  "의령군","함안군","창녕군","고성군(경남)","남해군","하동군","산청군","함양군","거창군","합천군"
+];
+function isGN(rdName) {
+  return rdName && GN_NAMES.includes(rdName);
+}
 // 자동완성/지도 라벨에 표시할 일반(70%) 기준 금액
 const BASE = {special:25, preferred:20, general:15, capital:10};
 const TL = {general:"일반", hanobu:"차상위·한부모", basic:"기초수급자"};
@@ -1044,6 +1147,43 @@ function ca() {
       }
     }
   } else ig.style.display = 'none';
+
+  // === 경남도민 생활지원금 자동 노출 ===
+  const rdName = document.getElementById('ipr').textContent;
+  const gnBox = document.getElementById('gnBox');
+  const gnTotal = document.getElementById('gnTotal');
+  const localTog = document.getElementById('localTog');
+  const localBody = document.getElementById('localBody');
+  const localBadge = document.getElementById('localBadge');
+  const localSd = document.getElementById('localSd');
+  if (isGN(rdName)) {
+    gnBox.style.display = 'block';
+    gnTotal.style.display = 'block';
+    const gnPer = GN_BONUS; // 1인 10만원
+    const govTotal = per * mem;
+    const gnSum = gnPer * mem;
+    const grand = govTotal + gnSum;
+    document.getElementById('gnAmt').innerHTML =
+      `1인당 <strong>${gnPer}만원</strong> 추가 · ${mem}인 합산 <strong>${gnSum}만원</strong>`;
+    document.getElementById('gnTotalAmt').textContent =
+      `${grand}만원 (정부 ${govTotal} + 경남 ${gnSum})`;
+    // 경남 거주자: 07번 섹션 자동 펼침 + 배지 강조
+    if (!localBody.classList.contains('open')) {
+      localBody.classList.add('open');
+      localTog.classList.add('open');
+    }
+    localBadge.classList.add('gn-active');
+    localBadge.textContent = '✓ 내 지역 해당';
+    localSd.textContent = '경남도민 생활지원금 대상입니다 — 아래 안내를 확인하세요';
+  } else {
+    gnBox.style.display = 'none';
+    gnTotal.style.display = 'none';
+    // 비경남: 배지 원상복구 (토글 상태는 사용자 의사 존중하여 건드리지 않음)
+    localBadge.classList.remove('gn-active');
+    localBadge.textContent = '경남 도민 대상';
+    localSd.textContent = '정부 지원금과 별개로 지급되는 지자체 자체 사업 — 헤더를 눌러 펼치기';
+  }
+
   us(reg, tier, mem, per);
   // 추정 도우미가 열려있으면 함께 재계산
   if (document.getElementById('est-body').classList.contains('show')) {
@@ -1065,7 +1205,14 @@ function us(reg, tier, mem, per) {
       im = hp <= lim ? '\n✓ 건강보험료 기준 충족' : '\n✕ 건강보험료 기준 초과';
     }
   }
-  const txt = `💰 2026 고유가 피해지원금 2차 계산해봤어요!\n\n📍 ${rl} (${GL[reg]})\n👤 ${TL[tier]} · ${mem}인 가구\n→ 예상 수령액: ${per}만원${mem > 1 ? ' (1인 기준)' : ''}${mem > 1 ? '\n→ 가족 합산: ' + (per * mem) + '만원' : ''}${im}\n\n📅 2차 신청: 5/18~7/3\n⏰ 사용기한: 8월 31일 (미사용 소멸!)\n\n👉 지원금 계산기로 내 금액 확인`;
+  // 경남도민 생활지원금 추가
+  let gnMsg = '';
+  if (isGN(rn)) {
+    const govTotal = per * mem;
+    const gnSum = GN_BONUS * mem;
+    gnMsg = `\n\n✚ 경남도민 생활지원금 ${gnSum}만원 추가\n💎 정부+경남 총 ${govTotal + gnSum}만원`;
+  }
+  const txt = `💰 2026 고유가 피해지원금 2차 계산해봤어요!\n\n📍 ${rl} (${GL[reg]})\n👤 ${TL[tier]} · ${mem}인 가구\n→ 예상 수령액: ${per}만원${mem > 1 ? ' (1인 기준)' : ''}${mem > 1 ? '\n→ 가족 합산: ' + (per * mem) + '만원' : ''}${im}${gnMsg}\n\n📅 2차 신청: 5/18~7/3\n⏰ 사용기한: 8월 31일 (미사용 소멸!)\n\n👉 지원금 계산기로 내 금액 확인`;
   document.getElementById('stxt').textContent = txt;
 }
 
@@ -1137,6 +1284,16 @@ function cy(v) {
       document.getElementById('yrt').textContent = '→ ' + dl2[n];
     }
   }
+}
+
+// =====================
+// 지자체 추가 지원금 토글
+// =====================
+function toggleLocal() {
+  const body = document.getElementById('localBody');
+  const tog = document.getElementById('localTog');
+  body.classList.toggle('open');
+  tog.classList.toggle('open');
 }
 
 // =====================
